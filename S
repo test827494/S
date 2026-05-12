@@ -1,23 +1,17 @@
 #!/usr/bin/env python3
-
 import sys
 import json
+import requests
 
-try:
-    import requests
-except ImportError:
-    print("No requests module found. Install it with: pip install requests")
-    sys.exit(1)
-
-# Read configuration and alert
-alert_file = open(sys.argv[1])
-alert_json = json.load(alert_file)
+# Wazuh pass arguments: [1] alert file, [3] hook url
+alert_file = sys.argv[1]
 hook_url = sys.argv[3]
 
-# Generate message structure
+with open(alert_file) as f:
+    alert_json = json.load(f)
+
 msg = {
-    "text": f"Wazuh Alert: {alert_json.get('rule').get('description')}\nLevel: {alert_json.get('rule').get('level')}\nAgent: {alert_json.get('agent').get('name')}"
+    "text": f"🚨 *Wazuh Alert*\n*Rule:* {alert_json['rule']['description']}\n*Level:* {alert_json['rule']['level']}\n*Agent:* {alert_json['agent']['name']}"
 }
 
-# Send to Slack
-requests.post(hook_url, data=json.dumps(msg), headers={'content-type': 'application/json'})
+requests.post(hook_url, json=msg)
