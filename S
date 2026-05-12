@@ -1,17 +1,85 @@
+1. Docker Compose (/opt/ollama/docker-compose.yml)
+YAML
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama_data:/root/.ollama
+
+  ollama-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: ollama-webui
+    restart: always
+    ports:
+      - "3000:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - ./webui_data:/app/backend/data
+2. Custom Integration Script (custom-ollama.py)
+Location: /opt/soc/nusantara/wazuh/custom-integrations/custom-ollama.py
+
+Python
 #!/usr/bin/env python3
 import sys
 import json
 import requests
 
-# Wazuh pass arguments: [1] alert file, [3] hook url
 alert_file = sys.argv[1]
-hook_url = sys.argv[3]
+ollama_url = "http://192.168.10.2:11434/api/generate"
 
 with open(alert_file) as f:
     alert_json = json.load(f)
 
-msg = {
-    "text": f"🚨 *Wazuh Alert*\n*Rule:* {alert_json['rule']['description']}\n*Level:* {alert_json['rule']['level']}\n*Agent:* {alert_json['agent']['name']}"
+description = alert_json.get('rule', {}).get('description', 'No description')
+level = alert_json.get('rule', {}).get('level', 0)
+agent = alert_json.get('agent', {}).get('name', 'Unknown')
+full_log = alert_json.get('full_log', '')
+
+prompt = (
+    f"Analyze this security alert. "
+    f"Rule: {description}. Level: {level}. Agent: {agent}. "
+    f"Log: {full_log}. "
+    f"Provide a brief threat assessment."
+)
+
+payload = {
+    "model": "llama3",
+    "prompt": prompt,
+    "stream": False
 }
 
-requests.post(hook_url, json=msg)
+try:
+    response = requests.post(ollama_url, json=payload, timeout=30)
+    if response.status_code == 200:
+        print(response.json().get('response'))
+except Exception as e:
+    print(f"Error: {str(e)}")
+3. Permissions
+Bash
+chmod +x /opt/soc/nusantara/wazuh/custom-integrations/custom-ollama.py
+chown root:root /opt/soc/nusantara/wazuh/custom-integrations/custom-ollama.py
+4. Wazuh Configuration (ossec.conf)
+Add this block to your manager configuration:
+
+XML
+<integration>
+  <name>custom-ollama</name>
+  <level>10</level>
+  <alert_format>json</alert_format>
+</integration>
+5. Initialization Commands
+Run these commands to start the stack and download the model:
+
+Bash
+cd /opt/ollama
+docker-compose up -d
+docker exec -it ollama ollama run llama3
+Finally, restart your Wazuh manager container:
+
+Bash
+docker-compose -f /opt/soc/nusantara/wazuh/docker-compose.yml restart wazuh.manager
