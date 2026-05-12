@@ -1,59 +1,23 @@
-<!-- Local rules -->
-<!-- Modify it at your will. -->
+#!/usr/bin/env python3
 
-<group name="local,syslog,sshd,">
-  <rule id="100001" level="5">
-    <if_sid>5716</if_sid>
-    <srcip>1.1.1.1</srcip>
-    <description>sshd: authentication failed from IP 1.1.1.1.</description>
-    <group>authentication_failed,pci_dss_10.2.4,pci_dss_10.2.5,</group>
-  </rule>
-</group>
+import sys
+import json
 
-<!-- MISP Rules -->
-<group name="misp,">
-  <rule id="100620" level="10">
-    <field name="integration">misp</field>
-    <match>misp</match>
-    <description>MISP Events</description>
-    <options>no_full_log</options>
-  </rule>
-  <rule id="100621" level="5">
-    <if_sid>100620</if_sid>
-    <field name="misp.error">\.+</field>
-    <description>MISP - Error connecting to API</description>
-    <options>no_full_log</options>
-    <group>misp_error,</group>
-  </rule>
-  <rule id="100622" level="12">
-    <field name="misp.category">\.+</field>
-    <description>MISP - IoC found in Threat Intel - Category: $(misp.category), Attribute: $(misp.value)</description>
-    <options>no_full_log</options>
-    <group>misp_alert,</group>
-  </rule>
-</group>
+try:
+    import requests
+except ImportError:
+    print("No requests module found. Install it with: pip install requests")
+    sys.exit(1)
 
-<!-- VirusTotal Rules -->
-<group name="virustotal,">
-  <rule id="100200" level="12">
-    <if_sid>1002</if_sid>
-    <field name="virustotal.result">1</field>
-    <description>VirusTotal: Alert - File $(file) is malicious</description>
-    <group>virustotal,syscheck,</group>
-  </rule>
-  <rule id="100201" level="3">
-    <if_sid>1002</if_sid>
-    <field name="virustotal.result">0</field>
-    <description>VirusTotal: File $(file) is clean</description>
-    <group>virustotal,syscheck,</group>
-  </rule>
-</group>
+# Read configuration and alert
+alert_file = open(sys.argv[1])
+alert_json = json.load(alert_file)
+hook_url = sys.argv[3]
 
-<!-- SLAAC & Network Rules -->
-<group name="network,ipv6,slaac,">
-  <rule id="100300" level="7">
-    <if_sid>31100</if_sid>
-    <match>Router Advertisement|SLAAC</match>
-    <description>SLAAC Network Event: IPv6 Router Advertisement Detected</description>
-  </rule>
-</group>
+# Generate message structure
+msg = {
+    "text": f"Wazuh Alert: {alert_json.get('rule').get('description')}\nLevel: {alert_json.get('rule').get('level')}\nAgent: {alert_json.get('agent').get('name')}"
+}
+
+# Send to Slack
+requests.post(hook_url, data=json.dumps(msg), headers={'content-type': 'application/json'})
