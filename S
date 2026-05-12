@@ -1,6 +1,1 @@
-<integration>
-  <name>slack</name>
-  <hook_url>https://hooks.slack.com/services/T000/B000/XXXX</hook_url>
-  <rule_id>100300</rule_id>
-  <alert_format>json</alert_format>
-</integration>
+curl -X POST -H 'Content-type: application/json' --data '{"text":"PFE Test: Connection check from Wazuh VM"}' https:3//hooks.slack.com/services/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
