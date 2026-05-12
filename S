@@ -1,0 +1,10 @@
+{
+  "case_customer": 1,
+  "case_soc_id": 1,
+  "cid": 1,
+  "case_name": "$exec.rule.description",
+  "case_description": "Log Level: $exec.rule.level - Full Log: $exec.full_log",
+  "case_severity_id": 2,
+  "case_status_id": 1,
+  "ioc": "$exec.data.srcip"
+}
