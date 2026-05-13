@@ -1,1 +1,33 @@
-docker exec -it single-node-wazuh.manager-1 /var/ossec/integrations/custom-ollama.py /var/ossec/logs/alerts/alerts.json "test"
+#!/bin/bash
+
+# List of directories to deploy
+PROJECTS=(
+    "/opt/soc/nusantara/wazuh-docker/single-node"
+    "/opt/zabbix-docker"
+    "/opt/ollama"
+    "/opt/soc/nusantara/shuffle/"
+)
+
+echo "Starting deployment process..."
+
+for dir in "${PROJECTS[@]}"; do
+    if [ -d "$dir" ]; then
+        echo "----------------------------------------------------"
+        echo "Entering directory: $dir"
+        cd "$dir" || { echo "Failed to enter $dir"; continue; }
+        
+        echo "Running docker compose up -d..."
+        docker compose up -d
+        
+        if [ $? -eq 0 ]; then
+            echo "Success in $dir"
+        else
+            echo "Error in $dir"
+        fi
+    else
+        echo "Directory $dir does not exist. Skipping..."
+    fi
+done
+
+echo "----------------------------------------------------"
+echo "All deployments finished."
