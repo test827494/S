@@ -1,1 +1,1 @@
-docker logs single-node-wazuh.manager-1 | grep "custom-ollama"
+docker exec -it single-node-wazuh.manager-1 curl -I http://192.168.10.2:11434
