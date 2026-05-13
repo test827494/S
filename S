@@ -1,1 +1,2 @@
-docker exec -it single-node-wazuh.manager-1 tail -f /var/ossec/logs/ossec.log | grep "custom-ollama"
+docker exec -u 0 -it single-node-wazuh.manager-1 mv /var/ossec/integrations/custom-ollama.py /var/ossec/integrations/custom-ollama
+
