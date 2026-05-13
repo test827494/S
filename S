@@ -1,1 +1,1 @@
-docker logs single-node-wazuh.manager-1 | grep "custom-ollama"
+docker exec -it single-node-wazuh.manager-1 grep "custom-ollama" /var/ossec/logs/ossec.log
