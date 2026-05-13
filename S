@@ -1,1 +1,1 @@
-docker logs wazuh.manager | grep "custom-ollama"
+docker exec -it single-node-wazuh.manager-1 ls -l /var/ossec/integrations/custom-ollama.py
